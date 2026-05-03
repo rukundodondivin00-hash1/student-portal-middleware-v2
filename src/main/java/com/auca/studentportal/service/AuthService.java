@@ -1,0 +1,122 @@
+package com.auca.studentportal.service;
+
+import com.auca.studentportal.config.AucaApiProperties;
+import com.auca.studentportal.cookie.CookieManager;
+import com.auca.studentportal.dto.SignInRequest;
+import com.auca.studentportal.exception.AucaApiException;
+import jakarta.annotation.PostConstruct;
+import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
+import org.springframework.http.*;
+import org.springframework.scheduling.annotation.Scheduled;
+import org.springframework.stereotype.Service;
+import org.springframework.web.client.HttpClientErrorException;
+import org.springframework.web.client.RestTemplate;
+
+import java.util.List;
+
+@Slf4j
+@Service
+@RequiredArgsConstructor
+public class AuthService {
+
+    private final RestTemplate restTemplate;
+    private final AucaApiProperties props;
+    private final CookieManager cookieManager;
+
+    private static final String SIGNIN_PATH  = "/api/v1/common/auth/signin";
+    private static final String REFRESH_PATH = "/api/v1/common/auth/refresh";
+
+    /**
+     * Sign in on startup so cookies are ready before any request arrives.
+     */
+    @PostConstruct
+    public void signInOnStartup() {
+        log.info("Authenticating middleware service account with AUCA...");
+        signIn();
+    }
+
+    /**
+     * Refresh the access token every 14 minutes.
+     * (Assumes access token TTL is 15 minutes — adjust if different.)
+     */
+    @Scheduled(fixedRateString = "${auca.auth.refresh-interval-ms:840000}")
+    public void scheduledTokenRefresh() {
+        log.info("Scheduled token refresh triggered");
+        try {
+            refresh();
+        } catch (Exception e) {
+            log.warn("Token refresh failed, attempting full re-login: {}", e.getMessage());
+            signIn();
+        }
+    }
+
+    /**
+     * Full login with username + password.
+     */
+    public void signIn() {
+        signIn(props.getServiceUsername(), props.getServicePassword());
+    }
+
+    /**
+     * Full login with given username + password.
+     */
+    public void signIn(String username, String password) {
+        try {
+            SignInRequest body = new SignInRequest();
+            body.setUsername(username);
+            body.setPassword(password);
+
+            HttpHeaders headers = new HttpHeaders();
+            headers.setContentType(MediaType.APPLICATION_JSON);
+
+            ResponseEntity<Object> response = restTemplate.exchange(
+                    props.getBaseUrl() + SIGNIN_PATH,
+                    HttpMethod.POST,
+                    new HttpEntity<>(body, headers),
+                    Object.class
+            );
+
+            extractAndStoreCookies(response);
+            log.info("User {} signed in successfully", username);
+
+        } catch (HttpClientErrorException e) {
+            log.error("Sign-in failed for user {}: {} — check credentials", username, e.getMessage());
+            throw new AucaApiException("Middleware authentication failed", HttpStatus.UNAUTHORIZED, e);
+        }
+    }
+
+    /**
+     * Refresh using stored refresh_token cookie.
+     */
+    public void refresh() {
+        String refreshToken = cookieManager.getRefreshToken();
+        if (refreshToken.isEmpty()) {
+            log.warn("No refresh token available — falling back to full sign-in");
+            signIn();
+            return;
+        }
+
+        HttpHeaders headers = new HttpHeaders();
+        headers.set("Cookie", "refresh_token=" + refreshToken);
+
+        ResponseEntity<Object> response = restTemplate.exchange(
+                props.getBaseUrl() + REFRESH_PATH,
+                HttpMethod.POST,
+                new HttpEntity<>(headers),
+                Object.class
+        );
+
+        extractAndStoreCookies(response);
+        log.info("Access token refreshed successfully");
+    }
+
+    private void extractAndStoreCookies(ResponseEntity<?> response) {
+        List<String> setCookieHeaders = response.getHeaders().get(HttpHeaders.SET_COOKIE);
+        if (setCookieHeaders != null && !setCookieHeaders.isEmpty()) {
+            cookieManager.updateCookies(setCookieHeaders);
+        } else {
+            log.warn("No Set-Cookie headers found in AUCA response");
+        }
+    }
+}
