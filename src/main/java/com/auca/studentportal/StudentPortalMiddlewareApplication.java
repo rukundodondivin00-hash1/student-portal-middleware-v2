@@ -8,6 +8,7 @@ import com.auca.studentportal.config.AucaApiProperties;
 
 @SpringBootApplication
 @EnableScheduling
+@EnableAsync
 @EnableConfigurationProperties(AucaApiProperties.class)
 public class StudentPortalMiddlewareApplication {
     public static void main(String[] args) {

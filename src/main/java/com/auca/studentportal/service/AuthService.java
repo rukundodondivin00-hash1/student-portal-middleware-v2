@@ -7,6 +7,7 @@ import com.auca.studentportal.exception.AucaApiException;
 import jakarta.annotation.PostConstruct;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.context.annotation.Lazy;
 import org.springframework.http.*;
 import org.springframework.scheduling.annotation.Async;
 import org.springframework.scheduling.annotation.Scheduled;
@@ -26,6 +27,9 @@ public class AuthService {
     private final AucaApiProperties props;
     private final CookieManager cookieManager;
 
+    @Lazy
+    private AuthService self; // self-proxy for async method invocation
+
     private static final String SIGNIN_PATH  = "/api/v1/common/auth/signin";
     private static final String REFRESH_PATH = "/api/v1/common/auth/refresh";
 
@@ -36,7 +40,7 @@ public class AuthService {
     @PostConstruct
     public void initializeAuth() {
         log.info("Scheduling async authentication with AUCA...");
-        attemptSignInAsync();
+        self.attemptSignInAsync(); // invoke via Spring proxy
     }
 
     /**
