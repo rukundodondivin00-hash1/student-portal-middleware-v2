@@ -1,0 +1,17 @@
+# ── Development overrides ─────────────────────────────────────────────────────
+# Run with: ./mvnw spring-boot:run -Dspring-boot.run.profiles=dev
+# Set credentials in your IDE env vars or export them in your terminal
+
+logging:
+  level:
+    com.auca.studentportal: DEBUG
+    org.springframework.web.client.RestTemplate: DEBUG
+    org.springframework.security: DEBUG
+
+auca:
+  api:
+    connect-timeout-seconds: 30
+    read-timeout-seconds: 60
+  auth:
+    # Refresh every 5 minutes in dev for easier testing
+    refresh-interval-ms: 300000

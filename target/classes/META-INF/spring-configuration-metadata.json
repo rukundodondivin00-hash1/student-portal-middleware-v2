@@ -1,0 +1,37 @@
+{
+  "groups": [
+    {
+      "name": "auca.api",
+      "type": "com.auca.studentportal.config.AucaApiProperties",
+      "sourceType": "com.auca.studentportal.config.AucaApiProperties"
+    }
+  ],
+  "properties": [
+    {
+      "name": "auca.api.base-url",
+      "type": "java.lang.String",
+      "sourceType": "com.auca.studentportal.config.AucaApiProperties"
+    },
+    {
+      "name": "auca.api.connect-timeout-seconds",
+      "type": "java.lang.Integer",
+      "sourceType": "com.auca.studentportal.config.AucaApiProperties"
+    },
+    {
+      "name": "auca.api.read-timeout-seconds",
+      "type": "java.lang.Integer",
+      "sourceType": "com.auca.studentportal.config.AucaApiProperties"
+    },
+    {
+      "name": "auca.api.service-password",
+      "type": "java.lang.String",
+      "sourceType": "com.auca.studentportal.config.AucaApiProperties"
+    },
+    {
+      "name": "auca.api.service-username",
+      "type": "java.lang.String",
+      "sourceType": "com.auca.studentportal.config.AucaApiProperties"
+    }
+  ],
+  "hints": []
+}

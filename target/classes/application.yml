@@ -1,0 +1,45 @@
+server:
+  port: 8081
+
+spring:
+  application:
+    name: student-portal-middleware
+
+# AUCA API configuration
+auca:
+  api:
+    base-url: https://auca-ims.onrender.com
+    # Set these as environment variables — never hardcode credentials
+    service-username: ${AUCA_SERVICE_USERNAME}
+    service-password: ${AUCA_SERVICE_PASSWORD}
+    connect-timeout-seconds: 10
+    read-timeout-seconds: 30
+  auth:
+    # Refresh access token every 14 minutes (14 * 60 * 1000 ms)
+    refresh-interval-ms: 840000
+
+# Swagger UI
+springdoc:
+  swagger-ui:
+    path: /swagger-ui.html
+    enabled: true
+    tags-sorter: alpha
+    operations-sorter: alpha
+  api-docs:
+    path: /v3/api-docs
+
+# Actuator
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health
+  endpoint:
+    health:
+      show-details: always
+
+logging:
+  level:
+    com.auca.studentportal: INFO
+    org.springframework.security: WARN
+    org.springframework.web.client: WARN
