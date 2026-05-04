@@ -8,9 +8,11 @@ import jakarta.annotation.PostConstruct;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.*;
+import org.springframework.scheduling.annotation.Async;
 import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Service;
 import org.springframework.web.client.HttpClientErrorException;
+import org.springframework.web.client.ResourceAccessException;
 import org.springframework.web.client.RestTemplate;
 
 import java.util.List;
@@ -28,12 +30,29 @@ public class AuthService {
     private static final String REFRESH_PATH = "/api/v1/common/auth/refresh";
 
     /**
-     * Sign in on startup so cookies are ready before any request arrives.
+     * Attempt to sign in asynchronously after startup.
+     * Non-blocking — application starts even if auth fails.
      */
     @PostConstruct
-    public void signInOnStartup() {
-        log.info("Authenticating middleware service account with AUCA...");
-        signIn();
+    public void initializeAuth() {
+        log.info("Scheduling async authentication with AUCA...");
+        attemptSignInAsync();
+    }
+
+    /**
+     * Async sign-in attempt with retry logic.
+     * Non-blocking startup; retries if connection fails.
+     */
+    @Async
+    public void attemptSignInAsync() {
+        try {
+            signIn();
+            log.info("Async authentication succeeded");
+        } catch (ResourceAccessException e) {
+            log.warn("Initial auth attempt failed (connection timeout/error): {}. Will retry on scheduled refresh.", e.getMessage());
+        } catch (Exception e) {
+            log.warn("Initial auth attempt failed: {}. Will retry on scheduled refresh.", e.getMessage());
+        }
     }
 
     /**
@@ -47,7 +66,11 @@ public class AuthService {
             refresh();
         } catch (Exception e) {
             log.warn("Token refresh failed, attempting full re-login: {}", e.getMessage());
-            signIn();
+            try {
+                signIn();
+            } catch (Exception ex) {
+                log.error("Re-login also failed: {}", ex.getMessage());
+            }
         }
     }
 
@@ -83,6 +106,9 @@ public class AuthService {
         } catch (HttpClientErrorException e) {
             log.error("Sign-in failed for user {}: {} — check credentials", username, e.getMessage());
             throw new AucaApiException("Middleware authentication failed", HttpStatus.UNAUTHORIZED, e);
+        } catch (ResourceAccessException e) {
+            log.error("Sign-in failed for user {}: Network/timeout error — {}", username, e.getMessage());
+            throw new AucaApiException("Middleware authentication failed — connection error", HttpStatus.SERVICE_UNAVAILABLE, e);
         }
     }
 
