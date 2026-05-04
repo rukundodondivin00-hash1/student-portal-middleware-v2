@@ -7,8 +7,6 @@ import com.auca.studentportal.exception.AucaApiException;
 import jakarta.annotation.PostConstruct;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.context.annotation.Lazy;
 import org.springframework.http.*;
 import org.springframework.scheduling.annotation.Async;
 import org.springframework.scheduling.annotation.Scheduled;
@@ -28,38 +26,8 @@ public class AuthService {
     private final AucaApiProperties props;
     private final CookieManager cookieManager;
 
-    @Lazy
-    @Autowired
-    private AuthService self; // self-proxy for async method invocation
-
     private static final String SIGNIN_PATH  = "/api/v1/common/auth/signin";
     private static final String REFRESH_PATH = "/api/v1/common/auth/refresh";
-
-    /**
-     * Attempt to sign in asynchronously after startup.
-     * Non-blocking — application starts even if auth fails.
-     */
-    @PostConstruct
-    public void initializeAuth() {
-        log.info("Scheduling async authentication with AUCA...");
-        self.attemptSignInAsync(); // invoke via Spring proxy
-    }
-
-    /**
-     * Async sign-in attempt with retry logic.
-     * Non-blocking startup; retries if connection fails.
-     */
-    @Async
-    public void attemptSignInAsync() {
-        try {
-            signIn();
-            log.info("Async authentication succeeded");
-        } catch (ResourceAccessException e) {
-            log.warn("Initial auth attempt failed (connection timeout/error): {}. Will retry on scheduled refresh.", e.getMessage());
-        } catch (Exception e) {
-            log.warn("Initial auth attempt failed: {}. Will retry on scheduled refresh.", e.getMessage());
-        }
-    }
 
     /**
      * Refresh the access token every 14 minutes.
