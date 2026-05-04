@@ -7,6 +7,7 @@ import com.auca.studentportal.exception.AucaApiException;
 import jakarta.annotation.PostConstruct;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.annotation.Lazy;
 import org.springframework.http.*;
 import org.springframework.scheduling.annotation.Async;
@@ -28,6 +29,7 @@ public class AuthService {
     private final CookieManager cookieManager;
 
     @Lazy
+    @Autowired
     private AuthService self; // self-proxy for async method invocation
 
     private static final String SIGNIN_PATH  = "/api/v1/common/auth/signin";
