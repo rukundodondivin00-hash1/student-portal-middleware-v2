@@ -24,7 +24,6 @@ public class FinanceApiClientImpl implements FinanceApiClient {
     private static final String MY_PAYMENTS_PATH   = "/api/v1/finance/student-payments/my-payments";
     private static final String MY_FEES_PATH       = "/api/v1/finance/student-payments/my-fees";
     private static final String MY_BALANCE_PATH    = "/api/v1/finance/student-payments/my-balance";
-    private static final String INITIATE_PAYMENT_PATH = "/api/v1/finance/student-payments/initiate";
     private static final String NOTIFY_PATH        = "/api/v1/finance/student-payments/notifications";
 
     @Override
@@ -72,22 +71,6 @@ public class FinanceApiClientImpl implements FinanceApiClient {
             return res.getBody();
         } catch (HttpClientErrorException | HttpServerErrorException ex) {
             throw toAucaException("fetching balance", ex);
-        }
-    }
-
-    @Override
-    public StudentPaymentResponse initiatePayment(String cookieHeader, PaymentInitiateRequest request) {
-        String url = props.getBaseUrl() + INITIATE_PAYMENT_PATH;
-        log.info("POST initiate payment → {}", url);
-        try {
-            ResponseEntity<StudentPaymentResponse> res = restTemplate.exchange(
-                    url, HttpMethod.POST,
-                    new HttpEntity<>(request, cookieHeaders(cookieHeader)),
-                    StudentPaymentResponse.class
-            );
-            return res.getBody();
-        } catch (HttpClientErrorException | HttpServerErrorException ex) {
-            throw toAucaException("initiating payment", ex);
         }
     }
 

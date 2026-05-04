@@ -5,7 +5,6 @@ import com.auca.studentportal.service.StudentPaymentService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.servlet.http.HttpServletRequest;
-import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.ResponseEntity;
@@ -57,18 +56,6 @@ public class StudentPaymentController {
         String cookieHeader = extractCookieHeader(request);
         BalanceResponse balance = studentPaymentService.getMyBalance(cookieHeader);
         return ResponseEntity.ok(ApiResponse.ok(balance));
-    }
-
-    @Operation(summary = "Initiate a payment",
-            description = "Starts a new payment process for the authenticated student.")
-    @PostMapping("/payments/initiate")
-    public ResponseEntity<ApiResponse<StudentPaymentResponse>> initiatePayment(
-            HttpServletRequest request,
-            @Valid @RequestBody PaymentInitiateRequest body) {
-
-        String cookieHeader = extractCookieHeader(request);
-        StudentPaymentResponse result = studentPaymentService.initiatePayment(cookieHeader, body);
-        return ResponseEntity.ok(ApiResponse.ok("Payment initiated successfully", result));
     }
 
     /**

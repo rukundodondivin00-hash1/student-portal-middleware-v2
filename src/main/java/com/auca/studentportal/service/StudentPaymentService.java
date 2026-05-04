@@ -45,11 +45,6 @@ public class StudentPaymentService {
         return result;
     }
 
-    public StudentPaymentResponse initiatePayment(String cookieHeader, PaymentInitiateRequest request) {
-        log.info("Initiating payment — feeType: {}, amount: {}", request.getFeeType(), request.getAmount());
-        return financeApiClient.initiatePayment(cookieHeader, request);
-    }
-
     private void validateResponse(Object result, String resource) {
         if (result == null) {
             throw new AucaApiException(
