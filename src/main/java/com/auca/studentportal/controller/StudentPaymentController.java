@@ -59,45 +59,8 @@ public class StudentPaymentController {
         return ResponseEntity.ok(ApiResponse.ok(balance));
     }
 
-    /**
-     * Extract the full Cookie header from the incoming request
-     * and forward it as-is to the Finance API.
-     */
-    private String extractCookieHeader(HttpServletRequest request) {
-        String cookieHeader = request.getHeader("Cookie");
-        if (cookieHeader == null || cookieHeader.isBlank()) {
-            log.warn("Request arrived with no Cookie header — AUCA will likely reject it");
-        }
-        return cookieHeader;
-    }
-}
-
-    @Operation(summary = "Get my registration fees",
-               description = "Returns paginated list of registration fees per term for the authenticated student.")
-    @GetMapping("/fees")
-    public ResponseEntity<ApiResponse<PagedResponse<Object>>> getMyFees(
-            HttpServletRequest request,
-            @RequestParam(defaultValue = "1") int page,
-            @RequestParam(defaultValue = "10") int size,
-            @RequestParam(defaultValue = "createdAt:desc") String sort) {
-
-        String cookieHeader = extractCookieHeader(request);
-        PagedResponse<Object> fees =
-                studentPaymentService.getMyFees(cookieHeader, page, size, sort);
-        return ResponseEntity.ok(ApiResponse.ok(fees));
-    }
-
-    @Operation(summary = "Get my current balance",
-               description = "Returns the current financial balance for the authenticated student.")
-    @GetMapping("/balance")
-    public ResponseEntity<ApiResponse<BalanceResponse>> getMyBalance(HttpServletRequest request) {
-        String cookieHeader = extractCookieHeader(request);
-        BalanceResponse balance = studentPaymentService.getMyBalance(cookieHeader);
-        return ResponseEntity.ok(ApiResponse.ok(balance));
-    }
-
     @Operation(summary = "Initiate a payment",
-               description = "Starts a new payment process for the authenticated student.")
+            description = "Starts a new payment process for the authenticated student.")
     @PostMapping("/payments/initiate")
     public ResponseEntity<ApiResponse<StudentPaymentResponse>> initiatePayment(
             HttpServletRequest request,

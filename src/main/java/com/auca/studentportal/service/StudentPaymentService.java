@@ -45,33 +45,6 @@ public class StudentPaymentService {
         return result;
     }
 
-    private void validateResponse(Object result, String resource) {
-        if (result == null) {
-            throw new AucaApiException(
-                    "Empty response from Finance API for " + resource, HttpStatus.BAD_GATEWAY);
-        }
-    }
-}
-
-    public PagedResponse<Object> getMyFees(
-            String cookieHeader, int page, int size, String sort) {
-
-        log.info("Fetching student fees — page: {}, size: {}", page, size);
-        PagedResponse<Object> result =
-                financeApiClient.getMyFees(cookieHeader, page, size, sort);
-        validateResponse(result, "fees");
-        return result;
-    }
-
-    public BalanceResponse getMyBalance(String cookieHeader) {
-        log.info("Fetching student balance");
-        BalanceResponse result = financeApiClient.getMyBalance(cookieHeader);
-        if (result == null) {
-            throw new AucaApiException("Empty response from Finance API for balance", HttpStatus.BAD_GATEWAY);
-        }
-        return result;
-    }
-
     public StudentPaymentResponse initiatePayment(String cookieHeader, PaymentInitiateRequest request) {
         log.info("Initiating payment — feeType: {}, amount: {}", request.getFeeType(), request.getAmount());
         return financeApiClient.initiatePayment(cookieHeader, request);
