@@ -34,8 +34,8 @@ public class SwaggerConfig {
     }
 
     /**
-     * Adds a Cookie header parameter to every student-facing endpoint
-     * so testers can paste their session cookie directly in Swagger UI.
+     * Adds Authorization and Cookie header parameters to every student-facing endpoint.
+     * Authorization header works in Swagger UI, Cookie header works with curl.
      */
     @Bean
     public OperationCustomizer cookieHeaderCustomizer() {
@@ -43,8 +43,14 @@ public class SwaggerConfig {
             if (handlerMethod.getBeanType().getName().contains("StudentPaymentController")) {
                 operation.addParametersItem(new Parameter()
                         .in("header")
+                        .name("Authorization")
+                        .description("Bearer token for authentication (works in Swagger UI). Example: Bearer eyJ...")
+                        .required(false)
+                        .schema(new StringSchema()));
+                operation.addParametersItem(new Parameter()
+                        .in("header")
                         .name("Cookie")
-                        .description("Paste your AUCA session cookies here. Example: access_token=your-token-value")
+                        .description("Cookie header for curl/testing. Example: access_token=eyJ...")
                         .required(false)
                         .schema(new StringSchema()));
             }

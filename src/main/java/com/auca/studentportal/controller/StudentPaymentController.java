@@ -20,7 +20,7 @@ import org.springframework.web.bind.annotation.*;
 @RestController
 @RequestMapping("/api/v1/student")
 @RequiredArgsConstructor
-@Tag(name = "Student Payments", description = "Student payment endpoints — requires AUCA session cookie")
+@Tag(name = "Student Payments", description = "Student payment endpoints — requires AUCA access token")
 public class StudentPaymentController {
 
     private final StudentPaymentService studentPaymentService;
@@ -28,7 +28,7 @@ public class StudentPaymentController {
 
     @Operation(summary = "Get my payment history",
             description = "Returns paginated list of payments for the authenticated student. " +
-                    "Pass AUCA access_token cookie from portal login.")
+                    "Pass AUCA access token via Authorization: Bearer <token> header (Swagger) or Cookie: access_token=<token>.")
     @GetMapping("/payments")
     public ResponseEntity<ApiResponse<PagedResponse<StudentPaymentResponse>>> getMyPayments(
             HttpServletRequest request,
@@ -44,7 +44,7 @@ public class StudentPaymentController {
 
     @Operation(summary = "Get my registration fees",
             description = "Returns paginated list of registration fees per term for the authenticated student. " +
-                    "Pass AUCA access_token cookie from portal login.")
+                    "Pass AUCA access token via Authorization: Bearer <token> header (Swagger) or Cookie: access_token=<token>.")
     @GetMapping("/fees")
     public ResponseEntity<ApiResponse<PagedResponse<Object>>> getMyFees(
             HttpServletRequest request,
@@ -59,7 +59,7 @@ public class StudentPaymentController {
 
     @Operation(summary = "Get my current balance",
             description = "Returns the current financial balance for the authenticated student. " +
-                    "Pass AUCA access_token cookie from portal login.")
+                    "Pass AUCA access token via Authorization: Bearer <token> header (Swagger) or Cookie: access_token=<token>.")
     @GetMapping("/balance")
     public ResponseEntity<ApiResponse<BalanceResponse>> getMyBalance(HttpServletRequest request) {
         String studentId = extractStudentId(request);
@@ -68,23 +68,35 @@ public class StudentPaymentController {
     }
 
     /**
-     * Extract studentId from the AUCA access_token cookie.
-     * The cookie should be in the format: access_token=<JWT_TOKEN>
+     * Extract studentId from the AUCA access_token.
+     * Supports two formats:
+     *   1. Cookie header: "access_token=<JWT_TOKEN>"
+     *   2. Authorization header: "Bearer <JWT_TOKEN>"
      *
-     * @throws AucaApiException if cookie missing or invalid
+     * @throws AucaApiException if token missing or invalid
      */
     private String extractStudentId(HttpServletRequest request) {
-        String cookieHeader = request.getHeader("Cookie");
-        if (cookieHeader == null || cookieHeader.isBlank()) {
-            log.warn("Request missing Cookie header");
-            throw new AucaApiException("Missing Cookie header. Please include AUCA access_token cookie.",
-                    HttpStatus.UNAUTHORIZED);
+        String accessToken = null;
+
+        // Try Authorization header first (works in Swagger UI)
+        String authHeader = request.getHeader("Authorization");
+        if (authHeader != null && authHeader.startsWith("Bearer ")) {
+            accessToken = authHeader.substring(7).trim();
+            log.debug("Using token from Authorization header");
         }
 
-        String accessToken = jwtUtil.extractTokenFromCookie(cookieHeader);
+        // Fallback to Cookie header
         if (accessToken == null) {
-            log.warn("No access_token found in Cookie header");
-            throw new AucaApiException("Missing access_token cookie. Please log into AUCA portal first.",
+            String cookieHeader = request.getHeader("Cookie");
+            if (cookieHeader != null && !cookieHeader.isBlank()) {
+                accessToken = jwtUtil.extractTokenFromCookie(cookieHeader);
+            }
+        }
+
+        if (accessToken == null) {
+            log.warn("No access_token found in Authorization or Cookie header");
+            throw new AucaApiException(
+                    "Missing authentication. Provide token in Authorization: Bearer <token> or Cookie: access_token=<token>",
                     HttpStatus.UNAUTHORIZED);
         }
 
