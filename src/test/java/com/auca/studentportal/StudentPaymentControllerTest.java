@@ -3,6 +3,7 @@ package com.auca.studentportal;
 import com.auca.studentportal.client.FinanceApiClient;
 import com.auca.studentportal.dto.*;
 import com.auca.studentportal.service.AuthService;
+import com.auca.studentportal.util.JwtUtil;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMockMvc;
@@ -29,17 +30,32 @@ class StudentPaymentControllerTest {
     @MockBean
     private FinanceApiClient financeApiClient;
 
+    @MockBean
+    private JwtUtil jwtUtil;
+
     // Mock AuthService so it doesn't try to connect to AUCA on startup
     @MockBean
     private AuthService authService;
 
     @Test
-    void getMyBalance_withCookie_returnsBalance() throws Exception {
+    void getMyBalance_withValidCookie_returnsBalance() throws Exception {
         BalanceResponse balance = new BalanceResponse();
         balance.setStudentId("25864");
         balance.setBalance(new BigDecimal("150000"));
 
-        when(financeApiClient.getMyBalance(any())).thenReturn(balance);
+        // Mock JwtUtil to extract studentId "25864" from any token
+        when(jwtUtil.extractTokenFromCookie(anyString())).thenAnswer(inv -> {
+            String cookie = inv.getArgument(0);
+            // Extract token after "access_token="
+            if (cookie != null && cookie.contains("access_token=")) {
+                return cookie.split("access_token=")[1].split(";")[0];
+            }
+            return null;
+        });
+        when(jwtUtil.extractStudentId("test-token-value")).thenReturn("25864");
+
+        // Mock Finance API call with studentId
+        when(financeApiClient.getMyBalance(eq("25864"))).thenReturn(balance);
 
         mockMvc.perform(get("/api/v1/student/balance")
                         .header("Cookie", "access_token=test-token-value")
@@ -51,7 +67,7 @@ class StudentPaymentControllerTest {
     }
 
     @Test
-    void getMyPayments_withCookie_returnsPagedList() throws Exception {
+    void getMyPayments_withValidCookie_returnsPagedList() throws Exception {
         StudentPaymentResponse payment = new StudentPaymentResponse();
         payment.setId("PAY-001");
         payment.setAmount(new BigDecimal("300000"));
@@ -65,7 +81,17 @@ class StudentPaymentControllerTest {
         paged.setTotalPages(1);
         paged.setTotalElements(1);
 
-        when(financeApiClient.getMyPayments(any(), anyInt(), anyInt(), any()))
+        // Mock JWT extraction
+        when(jwtUtil.extractTokenFromCookie(anyString())).thenAnswer(inv -> {
+            String cookie = inv.getArgument(0);
+            if (cookie != null && cookie.contains("access_token=")) {
+                return cookie.split("access_token=")[1].split(";")[0];
+            }
+            return null;
+        });
+        when(jwtUtil.extractStudentId("test-token-value")).thenReturn("25864");
+
+        when(financeApiClient.getMyPayments(eq("25864"), anyInt(), anyInt(), anyString()))
                 .thenReturn(paged);
 
         mockMvc.perform(get("/api/v1/student/payments")
@@ -77,16 +103,18 @@ class StudentPaymentControllerTest {
     }
 
     @Test
-    void getMyBalance_withoutCookie_stillCallsFinance() throws Exception {
-        // Without cookie, Finance will return 401 — but our middleware
-        // should still forward the request and let AUCA handle auth
-        BalanceResponse balance = new BalanceResponse();
-        balance.setStudentId("25864");
-        balance.setBalance(BigDecimal.ZERO);
-
-        when(financeApiClient.getMyBalance(isNull())).thenReturn(balance);
-
+    void getMyBalance_withoutCookie_returnsUnauthorized() throws Exception {
         mockMvc.perform(get("/api/v1/student/balance"))
-                .andExpect(status().isOk());
+                .andExpect(status().isUnauthorized());
+    }
+
+    @Test
+    void getMyBalance_withInvalidCookie_returnsUnauthorized() throws Exception {
+        // Mock JWT extraction to fail
+        when(jwtUtil.extractTokenFromCookie(anyString())).thenReturn(null);
+
+        mockMvc.perform(get("/api/v1/student/balance")
+                        .header("Cookie", "access_token=invalid-token"))
+                .andExpect(status().isUnauthorized());
     }
 }

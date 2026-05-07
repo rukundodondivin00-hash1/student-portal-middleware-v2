@@ -16,28 +16,28 @@ public class StudentPaymentService {
     private final FinanceApiClient financeApiClient;
 
     public PagedResponse<StudentPaymentResponse> getMyPayments(
-            String cookieHeader, int page, int size, String sort) {
+            String studentId, int page, int size, String sort) {
 
-        log.info("Fetching student payments — page: {}, size: {}", page, size);
+        log.info("Fetching student payments for student {} — page: {}, size: {}", studentId, page, size);
         PagedResponse<StudentPaymentResponse> result =
-                financeApiClient.getMyPayments(cookieHeader, page, size, sort);
+                financeApiClient.getMyPayments(studentId, page, size, sort);
         validateResponse(result, "payments");
         return result;
     }
 
     public PagedResponse<Object> getMyFees(
-            String cookieHeader, int page, int size, String sort) {
+            String studentId, int page, int size, String sort) {
 
-        log.info("Fetching student fees — page: {}, size: {}", page, size);
+        log.info("Fetching student fees for student {} — page: {}, size: {}", studentId, page, size);
         PagedResponse<Object> result =
-                financeApiClient.getMyFees(cookieHeader, page, size, sort);
+                financeApiClient.getMyFees(studentId, page, size, sort);
         validateResponse(result, "fees");
         return result;
     }
 
-    public BalanceResponse getMyBalance(String cookieHeader) {
-        log.info("Fetching student balance");
-        BalanceResponse result = financeApiClient.getMyBalance(cookieHeader);
+    public BalanceResponse getMyBalance(String studentId) {
+        log.info("Fetching student balance for student {}", studentId);
+        BalanceResponse result = financeApiClient.getMyBalance(studentId);
         if (result == null) {
             throw new AucaApiException(
                     "Empty response from Finance API for balance", HttpStatus.BAD_GATEWAY);
