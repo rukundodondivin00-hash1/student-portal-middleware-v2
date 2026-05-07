@@ -26,8 +26,11 @@ public class SwaggerConfig {
                                 
                                 **How to authenticate in Swagger:**
                                 1. Call POST /api/v1/middleware/auth/signin with your AUCA credentials
-                                2. Copy the value of the `access_token` cookie from the response
-                                3. Paste it in the `Cookie` header field below as: `access_token=<value>`
+                                2. Copy the JWT token from the response
+                                3. Paste it in the `Authorization` header as: `Bearer <token>`
+                                
+                                **Alternative (curl only):**
+                                Use `Cookie: access_token=<token>` header
                                 """)
                         .contact(new Contact()
                                 .name("AUCA Student Portal Team")));
