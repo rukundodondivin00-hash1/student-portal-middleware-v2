@@ -60,14 +60,19 @@ public class JwtUtil {
 
     /**
      * Extract access token from Cookie header value.
-     * Expects format: "access_token=eyJ...; other=value"
+     * Handles two formats:
+     *   1. Standard cookie: "access_token=<token>; other=value"
+     *   2. Raw token (Swagger direct entry): "<token>"
+     *
+     * @param cookieHeader the Cookie header value
+     * @return the access token, or null if not found/invalid
      */
     public String extractTokenFromCookie(String cookieHeader) {
         if (cookieHeader == null || cookieHeader.isBlank()) {
             return null;
         }
 
-        // Find the access_token part
+        // Try standard cookie format first: "access_token=xxx"
         String[] cookies = cookieHeader.split(";");
         for (String cookie : cookies) {
             String trimmed = cookie.trim();
@@ -75,6 +80,15 @@ public class JwtUtil {
                 return trimmed.substring("access_token=".length());
             }
         }
+
+        // If no access_token= found, treat as raw JWT token (Swagger UI direct paste)
+        String trimmed = cookieHeader.trim();
+        if (trimmed.split("\\.").length == 3) {
+            log.debug("Treating Cookie header as raw JWT token (no access_token= prefix)");
+            return trimmed;
+        }
+
+        log.warn("Could not extract access_token from Cookie header: {}", cookieHeader);
         return null;
     }
 }
