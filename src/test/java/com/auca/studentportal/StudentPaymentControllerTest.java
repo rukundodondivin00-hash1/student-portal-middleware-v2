@@ -2,14 +2,13 @@ package com.auca.studentportal;
 
 import com.auca.studentportal.client.FinanceApiClient;
 import com.auca.studentportal.dto.*;
-import com.auca.studentportal.service.AuthService;
 import com.auca.studentportal.util.JwtUtil;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMockMvc;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.boot.test.mock.mockito.MockBean;
-import org.springframework.http.MediaType;
+
 import org.springframework.test.web.servlet.MockMvc;
 
 import java.math.BigDecimal;
@@ -33,10 +32,6 @@ class StudentPaymentControllerTest {
 
     @MockBean
     private JwtUtil jwtUtil;
-
-    // Mock AuthService so it doesn't try to connect to AUCA on startup
-    @MockBean
-    private AuthService authService;
 
     // Helper method to create a fake JWT token with specific student ID
     private String createFakeJwtToken(String studentId) {

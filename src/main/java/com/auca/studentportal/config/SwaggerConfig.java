@@ -19,18 +19,18 @@ public class SwaggerConfig {
                         .title("Student Portal Middleware API")
                         .version("1.0.0")
                         .description("""
-                                Financeâ€“Student Portal Integration Middleware.
+                                Finance–Student Portal Integration Middleware.
                                 
                                 This service acts as a secure bridge between the Student Portal
                                 and the AUCA Finance system (https://auca-ims.onrender.com).
                                 
                                 **How to authenticate in Swagger:**
-                                1. Call POST /api/v1/middleware/auth/signin with your AUCA credentials
-                                2. Copy the JWT token from the response
-                                3. Paste it in the `Authorization` header as: `Bearer <token>`
+                                1. Sign into AUCA student portal in your browser
+                                2. Copy the access_token cookie value
+                                3. Paste it in the Cookie field as: access_token=<token>
                                 
-                                **Alternative (curl only):**
-                                Use `Cookie: access_token=<token>` header
+                                **Alternative:**
+                                Use the Authorization header with Bearer token
                                 """)
                         .contact(new Contact()
                                 .name("AUCA Student Portal Team")));
@@ -61,3 +61,4 @@ public class SwaggerConfig {
         };
     }
 }
+

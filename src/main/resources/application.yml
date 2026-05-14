@@ -9,14 +9,9 @@ spring:
 auca:
   api:
     base-url: https://auca-ims.onrender.com
-    # Set these as environment variables — never hardcode credentials
-    service-username: ${AUCA_SERVICE_USERNAME}
-    service-password: ${AUCA_SERVICE_PASSWORD}
+    api-key: ${AUCA_API_KEY}
     connect-timeout-seconds: 10
     read-timeout-seconds: 30
-  auth:
-    # Refresh access token every 14 minutes (14 * 60 * 1000 ms)
-    refresh-interval-ms: 840000
 
 # Swagger UI
 springdoc:

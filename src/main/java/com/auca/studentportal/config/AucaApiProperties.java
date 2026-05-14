@@ -7,8 +7,7 @@ import org.springframework.boot.context.properties.ConfigurationProperties;
 @ConfigurationProperties(prefix = "auca.api")
 public class AucaApiProperties {
     private String baseUrl;
-    private String serviceUsername;
-    private String servicePassword;
+    private String apiKey;
     private int connectTimeoutSeconds = 10;
     private int readTimeoutSeconds = 30;
 }

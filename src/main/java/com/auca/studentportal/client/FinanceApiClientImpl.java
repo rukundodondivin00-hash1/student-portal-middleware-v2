@@ -1,7 +1,6 @@
 package com.auca.studentportal.client;
 
 import com.auca.studentportal.config.AucaApiProperties;
-import com.auca.studentportal.cookie.CookieManager;
 import com.auca.studentportal.dto.*;
 import com.auca.studentportal.exception.AucaApiException;
 import lombok.RequiredArgsConstructor;
@@ -21,9 +20,7 @@ public class FinanceApiClientImpl implements FinanceApiClient {
 
     private final RestTemplate restTemplate;
     private final AucaApiProperties props;
-    private final CookieManager cookieManager;
 
-    // Path templates with %s placeholder for studentId
     private static final String PAYMENTS_PATH_TEMPLATE = "/api/v1/finance/student-payments/%s/my-payments";
     private static final String FEES_PATH_TEMPLATE     = "/api/v1/finance/student-payments/%s/my-fees";
     private static final String BALANCE_PATH_TEMPLATE  = "/api/v1/finance/student-payments/%s/my-balance";
@@ -37,7 +34,7 @@ public class FinanceApiClientImpl implements FinanceApiClient {
         try {
             ResponseEntity<PagedResponse<StudentPaymentResponse>> res = restTemplate.exchange(
                     url, HttpMethod.GET,
-                    new HttpEntity<>(serviceCookieHeaders()),
+                    new HttpEntity<>(apiKeyHeaders()),
                     new ParameterizedTypeReference<>() {}
             );
             return res.getBody();
@@ -54,7 +51,7 @@ public class FinanceApiClientImpl implements FinanceApiClient {
         try {
             ResponseEntity<PagedResponse<Object>> res = restTemplate.exchange(
                     url, HttpMethod.GET,
-                    new HttpEntity<>(serviceCookieHeaders()),
+                    new HttpEntity<>(apiKeyHeaders()),
                     new ParameterizedTypeReference<>() {}
             );
             return res.getBody();
@@ -71,7 +68,7 @@ public class FinanceApiClientImpl implements FinanceApiClient {
         try {
             ResponseEntity<BalanceResponse> res = restTemplate.exchange(
                     url, HttpMethod.GET,
-                    new HttpEntity<>(serviceCookieHeaders()),
+                    new HttpEntity<>(apiKeyHeaders()),
                     BalanceResponse.class
             );
             return res.getBody();
@@ -81,13 +78,13 @@ public class FinanceApiClientImpl implements FinanceApiClient {
     }
 
     @Override
-    public void forwardNotification(FinanceNotificationRequest request, String serviceCookieHeader) {
+    public void forwardNotification(FinanceNotificationRequest request) {
         String url = props.getBaseUrl() + NOTIFY_PATH;
         log.info("POST notification → {}", url);
         try {
             restTemplate.exchange(
                     url, HttpMethod.POST,
-                    new HttpEntity<>(request, cookieHeaders(serviceCookieHeader)),
+                    new HttpEntity<>(request, apiKeyHeaders()),
                     Void.class
             );
         } catch (HttpClientErrorException | HttpServerErrorException ex) {
@@ -95,35 +92,13 @@ public class FinanceApiClientImpl implements FinanceApiClient {
         }
     }
 
-    // ── Helpers ────────────────────────────────────────────────────────────
-
-    /**
-     * Builds headers with the middleware service account's AUCA cookies.
-     * Uses cookies stored in CookieManager after authentication.
-     */
-    private HttpHeaders serviceCookieHeaders() {
-        String cookieHeader = cookieManager.getServiceCookieHeader();
-        if (cookieHeader == null || cookieHeader.isBlank()) {
-            log.warn("Service account cookies not available — AUCA may not be authenticated");
-            // Fall back to empty cookies; will likely fail
-            return new HttpHeaders();
-        }
+    private HttpHeaders apiKeyHeaders() {
         HttpHeaders headers = new HttpHeaders();
         headers.setContentType(MediaType.APPLICATION_JSON);
-        headers.set(HttpHeaders.COOKIE, cookieHeader);
-        return headers;
-    }
-
-    /**
-     * Cookie headers for legacy webhook calls (passed in as parameter).
-     * @deprecated Use serviceCookieHeaders() for student data calls
-     */
-    @Deprecated
-    private HttpHeaders cookieHeaders(String cookieHeader) {
-        HttpHeaders headers = new HttpHeaders();
-        headers.setContentType(MediaType.APPLICATION_JSON);
-        if (cookieHeader != null && !cookieHeader.isBlank()) {
-            headers.set(HttpHeaders.COOKIE, cookieHeader);
+        if (props.getApiKey() != null && !props.getApiKey().isBlank()) {
+            headers.set("x-ims-api-key", props.getApiKey());
+        } else {
+            log.warn("API key not configured — AUCA API calls will likely fail");
         }
         return headers;
     }
